@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 
 const initSocket = (httpServer) => {
-    const messages = [];
+    // const messages = [];
     
     const io = new Server(httpServer);
     console.log('Servicio socket.io activo');
@@ -15,7 +15,7 @@ const initSocket = (httpServer) => {
         });
 
         client.on('new_own_msg', data => {
-            messages.push(data);
+            // messages.push(data);
             io.emit('new_general_msg', data);
         });
         
