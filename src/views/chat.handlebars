@@ -1,0 +1,78 @@
+<link rel="stylesheet" href=" https://cdn.jsdelivr.net/npm/sweetalert2@11.14.1/dist/sweetalert2.min.css">
+
+<div>
+    <h2>Chat example</h2>
+</div>
+
+<div style="margin-top: 2em; border: 1px solid #666; padding: 1em; width: 360px;">
+    <p id="msgList" style="padding: 0; margin: 0;"></p>
+</div>
+
+<div style="margin-left: 1em; margin-top: 2em;">
+    <input class="form-control" type="text" id="msg" name="msg" placeholder="Tipear mensaje" style="width: 360px;">
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.1/dist/sweetalert2.all.min.js"></script>
+<script type="module">
+    const url = ''; // vacío para localhost
+    const options = {};
+    const user = { nickName: '' };
+
+    const msgField = document.getElementById('msg');
+    const msgList = document.getElementById('msgList');
+
+    const askName = async () => {
+        const result = await Swal.fire({
+            title: 'Chat Messages JR',
+            input: 'text',
+            text: 'Bienvenido!, indicá tu nombre para el chat',
+            inputValidator: val => !val && 'Indicar nombre!',
+            allowOutsideClick: false
+        });
+
+        user.nickName = result.value || 'guest'; // invitado
+    };
+
+    const notify = (text) => {
+        Swal.fire({
+            text: text,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+    }
+
+    msgField.addEventListener('keyup', event => {
+        if (event.key === 'Enter' && msgField.value !== '') {
+            const data = { user: user.nickName, msg: msgField.value };
+            socketClient.emit('new_own_msg', data);
+            msgField.value = '';
+        }
+    });
+
+    // Conexión al SERVIDOR websockets
+    const socketClient = io(url, options);
+
+    socketClient.on('connect', async () => {
+        console.log(`Conectado servidor socket.io ${url}`);
+        await askName();
+        socketClient.emit('new_user_data', { user: user.nickName });
+    });
+
+    socketClient.on('current_messages', data => {
+        msgList.innerHTML = '';
+        data.forEach(msg => {
+            msgList.innerHTML += `<br /><strong>[${msg.user}</strong>] ${msg.msg}`;
+        });
+    });
+
+    socketClient.on('new_general_msg', data => {
+        msgList.innerHTML += `<br /><strong>[${data.user}</strong>] ${data.msg}`;
+    });
+
+    socketClient.on('new_user', data => {
+        notify(`${data.user} se ha conectado!`);
+    });
+</script>
